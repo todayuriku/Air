@@ -414,7 +414,7 @@ def scan_receipt():
     """
     try:
         # 修正: Render側のライブラリで動作しつつ、gemini-2.5-flashを使用する
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content([img, prompt])
         
         raw_text = response.text.strip()
@@ -631,7 +631,7 @@ def ask_ai():
 """
     try:
         # 修正: Render側のライブラリで動作しつつ、gemini-2.5-flashを使用する
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
         
         dish_names = re.findall(r'\*\*(.*?)\*\*', response.text)

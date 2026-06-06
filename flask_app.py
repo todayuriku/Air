@@ -45,11 +45,17 @@ sns.set_theme(style="whitegrid", rc={"axes.spines.top": False, "axes.spines.righ
 
 # 用意したフォントファイルを相対パスで読み込む
 FONT_PATH = os.path.join('static', 'fonts', 'NotoSansJP-VariableFont_wght.ttf')
-if os.path.exists(FONT_PATH):
-    font_prop = matplotlib.font_manager.FontProperties(fname=FONT_PATH)
-    matplotlib.rcParams['font.family'] = font_prop.get_name()
-else:
-    print(f"警告: フォントファイルが見つかりません - {FONT_PATH}")
+try:
+    if os.path.exists(FONT_PATH):
+        font_manager = matplotlib.font_manager.FontManager()
+        font_manager.addfont(FONT_PATH) # フォントを強制的にリストへ追加
+        prop = matplotlib.font_manager.FontProperties(fname=FONT_PATH)
+        matplotlib.rcParams['font.family'] = prop.get_name()
+        print(f"フォント読み込み成功: {prop.get_name()}")
+    else:
+        print(f"警告: フォントファイルが見つかりません - {FONT_PATH}")
+except Exception as e:
+    print(f"フォント読み込みエラー: {e}")
 
 # Gemini API設定 (最新版)
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))

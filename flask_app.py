@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
-from google import genai
+import google.generativeai as genai
 from PIL import Image
 import io
 import base64
@@ -47,8 +47,8 @@ sns.set_theme(style="whitegrid", rc={"axes.spines.top": False, "axes.spines.righ
 japanize_matplotlib.japanize()
 
 # Gemini API設定
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-
+# Gemini API設定
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 # ==========================================
 # 2. データベースのテーブル定義（CSVの代わり）
 # ==========================================
@@ -425,10 +425,9 @@ def scan_receipt():
     ]
     """
     try:
-        response = client.models.generate_content(
-            model="models/gemini-2.5-flash",
-            contents=[img, prompt]
-        )
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content([img, prompt])
+        
         raw_text = response.text.strip()
         start = raw_text.find('[')
         end = raw_text.rfind(']') + 1
@@ -681,7 +680,8 @@ def ask_ai():
 買い足すもの: 〇〇
 """
     try:
-        response = client.models.generate_content(model="models/gemini-2.5-flash", contents=prompt)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(prompt)
         dish_names = re.findall(r'\*\*(.*?)\*\*', response.text)
         links = [{"name": n, "url": f"https://www.google.com/search?q={urllib.parse.quote(n + ' レシピ')}"} for n in dish_names]
         return jsonify({"answer": response.text, "links": links})

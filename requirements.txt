@@ -6,5 +6,4 @@ python-dotenv
 Pillow
 matplotlib
 seaborn
-japanize-matplotlib
 gunicorn

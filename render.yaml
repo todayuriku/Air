@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: air-fridge
+    env: python
+    buildCommand: "apt-get update && apt-get install -y fonts-ipaexfont && pip install -r requirements.txt"
+    startCommand: "gunicorn flask_app:app --bind 0.0.0.0:$PORT"

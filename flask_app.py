@@ -13,7 +13,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
-import japanize_matplotlib
 from collections import defaultdict
 from dotenv import load_dotenv
 

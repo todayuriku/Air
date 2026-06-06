@@ -5,8 +5,8 @@ import json
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
-# Renderにインストールされているライブラリに合わせたインポート
-import google.generativeai as genai
+# ★あなたの元の最新ライブラリを使用
+from google import genai
 from PIL import Image
 import io
 import base64
@@ -40,14 +40,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# グラフのデザイン（日本語IPAフォント設定）
+# グラフのデザイン（英語設定）
 sns.set_theme(style="whitegrid", rc={"axes.spines.top": False, "axes.spines.right": False, "axes.spines.left": False})
-# Render環境にインストールしたIPAフォントを指定
-plt.rcParams['font.family'] = ['sans-serif']
-plt.rcParams['font.sans-serif'] = ['IPAexGothic', 'Noto Sans CJK JP', 'Hiragino Maru Gothic Pro', 'Yu Gothic', 'Meiryo']
 
-# Gemini API設定 (古いライブラリ用の記述で、2.5-flashを呼び出す)
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+# ★Gemini API設定 (最新の書き方)
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 # --- データベースのテーブル定義 ---
 class Inventory(db.Model):
@@ -182,10 +179,10 @@ def create_expense_chart(period='comparison'):
             plt.close(fig)
             return None
             
-        labels = ['先月', '今月']
+        labels = ['Last Month', 'This Month']
         receipt_vals = [last_receipt, this_receipt]
         manual_vals = [last_manual, this_manual]
-        title = '先月と今月の食費の比較'
+        title = 'Food Expenses Comparison'
         
         ax.bar(labels, receipt_vals, label='Grocery', color='#7B8FF7', width=0.5, alpha=0.9)
         ax.bar(labels, manual_vals, bottom=receipt_vals, label='Dining Out / Other', color='#FFB74D', width=0.5, alpha=0.9)
@@ -210,14 +207,14 @@ def create_expense_chart(period='comparison'):
         receipt_vals = [data_dict[k]['receipt'] for k in labels_sorted]
         manual_vals = [data_dict[k]['manual'] for k in labels_sorted]
         display_labels = [f"{int(l)} / {today.year}" for l in labels_sorted]
-        title = f'{today.year}年の食費の推移' 
+        title = f'Food Expenses in {today.year}' 
         
         ax.bar(display_labels, receipt_vals, label='Grocery', color='#7B8FF7', alpha=0.9)
         ax.bar(display_labels, manual_vals, bottom=receipt_vals, label='Dining Out / Other', color='#FFB74D', alpha=0.9)
         ax.tick_params(axis='x', rotation=45)
     
     ax.set_title(title, fontsize=14, fontweight='bold', pad=25, loc='left')
-    ax.set_ylabel('合計金額', fontsize=11, color='#555555')
+    ax.set_ylabel('Amount (JPY)', fontsize=11, color='#555555')
     ax.set_xlabel('')
     ax.tick_params(colors='#444444')
     ax.legend(fontsize=10, loc='lower right', bbox_to_anchor=(1.0, 1.02), ncol=2, frameon=False, borderaxespad=0)
@@ -278,13 +275,14 @@ def create_ranking_charts(period='this_month'):
         
         names = [x[0] for x in lst]
         qtys = [x[1] for x in lst]
-        title_suffix = 'Grams' if key=='g' else 'パック/袋' if key=='pack' else 'その他の単位'
+        title_suffix = 'Grams' if key=='g' else 'Packs/Boxes' if key=='pack' else 'Other Units'
         
         fig, ax = plt.subplots(figsize=(5, 3))
-        sns.barplot(x=qtys, y=names, palette=palettes[key], ax=ax)
+        # 警告を消すために hue を指定し、legend=False に設定
+        sns.barplot(x=qtys, y=names, hue=names, palette=palettes[key], legend=False, ax=ax)
         
-        ax.set_title(f"消費ランキング top 5 ({title_suffix})", fontsize=12, fontweight='bold', pad=10)
-        ax.set_xlabel('合計金額', fontsize=10, color='#666666')
+        ax.set_title(f"Top 5 Consumed ({title_suffix})", fontsize=12, fontweight='bold', pad=10)
+        ax.set_xlabel('Total Amount', fontsize=10, color='#666666')
         ax.set_ylabel('')
         ax.tick_params(colors='#555555')
         for label in ax.get_yticklabels():
@@ -352,7 +350,7 @@ def index():
         
     display_items.sort(key=lambda x: x['exp_date'])
     
-    # 修正: JSが読み取れる形式（JSON文字列）に変換して渡すことでサジェストと単位変更を復活
+    # 修正: JSが読み取れる形式（JSON文字列）に変換して渡す
     unit_map = {name: info['unit'] for name, info in master_foods.items()}
     unit_map_json = json.dumps(unit_map, ensure_ascii=False)
     
@@ -364,7 +362,7 @@ def index():
         'index.html',
         items=display_items,
         master_foods=list(master_foods.keys()),
-        unit_map=unit_map_json, # JS用にJSONで渡す
+        unit_map=unit_map_json,
         expense_chart=expense_chart,
         ranking_charts=ranking_charts,
         this_month_total=this_month_total,
@@ -413,9 +411,11 @@ def scan_receipt():
     ]
     """
     try:
-        # 修正: Render側のライブラリで動作しつつ、gemini-2.5-flashを使用する
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content([img, prompt])
+        # ★あなたの元の最新コードに戻しました
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[img, prompt]
+        )
         
         raw_text = response.text.strip()
         start = raw_text.find('[')
@@ -630,9 +630,11 @@ def ask_ai():
 買い足すもの: 〇〇
 """
     try:
-        # 修正: Render側のライブラリで動作しつつ、gemini-2.5-flashを使用する
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(prompt)
+        # ★あなたの元の最新コードに戻しました
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
         
         dish_names = re.findall(r'\*\*(.*?)\*\*', response.text)
         links = [{"name": n, "url": f"https://www.google.com/search?q={urllib.parse.quote(n + ' レシピ')}"} for n in dish_names]

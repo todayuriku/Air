@@ -2,109 +2,336 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スマート冷蔵庫管理</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background-color: #f8f9fa; font-family: 'Helvetica Neue', Arial, sans-serif; }
-        .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .table-responsive { background: white; border-radius: 8px; padding: 10px; }
-        .btn-custom { padding: 6px 12px; font-size: 0.9rem; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AiR">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#7B8FF7">
+
+    <title>AiR - スマート冷蔵庫</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=6">
 </head>
 <body>
+    <div class="app-container">
+        <div class="header">
+            <div class="app-logo">A i R</div>
+            <form action="/add?v=1" method="POST" class="main-form" id="reg-form">
+                <div style="flex: 2; position: relative;">
+                    <input type="text" name="item_name" id="item_name_input" class="input-name" placeholder="食材を検索" autocomplete="off" required>
+                    <div id="suggest-list" class="suggest-list"></div>
+                </div>
+                <div class="qty-group"><input type="number" name="quantity" class="input-qty" placeholder="0" required><span id="unit-display" style="color:var(--main-blue); font-weight:bold; margin-left:4px; white-space:nowrap; flex-shrink:0;">個</span></div>
+                <button type="submit" class="btn-submit">登録</button>
+            </form>
+        </div>
 
-<div class="container py-4">
-    <h1 class="text-center mb-4 text-primary">📱 我が家のスマート冷蔵庫</h1>
+        <div class="category-tabs" id="category-tabs">
+            <button class="tab-btn active" onclick="filterCategory('all', this)">すべて</button>
+            <button class="tab-btn" onclick="filterCategory('乳・卵', this)">乳・卵</button>
+            <button class="tab-btn" onclick="filterCategory('肉類', this)">肉類</button>
+            <button class="tab-btn" onclick="filterCategory('野菜', this)">野菜</button>
+            <button class="tab-btn" onclick="filterCategory('魚介類', this)">魚介類</button>
+            <button class="tab-btn" onclick="filterCategory('大豆製品', this)">大豆製品</button>
+            <button class="tab-btn" onclick="filterCategory('調味料', this)">調味料</button>
+            <button class="tab-btn" onclick="filterCategory('飲料', this)">飲料</button>
+            <button class="tab-btn" onclick="filterCategory('加工食品', this)">加工食品</button>
+            <button class="tab-btn" onclick="filterCategory('その他', this)">その他</button>
+        </div>
 
-    <div class="card p-3 mb-4">
-        <h5 class="card-title text-success">🧾 レシートから一括登録</h5>
-        <form action="{{ url_for('upload_receipt') }}" method="POST" enctype="multipart/form-data" class="row g-2 align-items-center">
-            <div class="col-8 col-sm-9">
-                <input type="file" name="receipt" accept="image/*" class="form-control" required>
+        <div id="fridge-view" class="tab-content active">
+            <div class="sort-container" id="sort-container">
+                <span class="sort-label">並び替え：</span>
+                <button class="sort-btn active" onclick="sortFridge('exp_asc', this)">期限が近い順</button>
+                <button class="sort-btn" onclick="sortFridge('cat_asc', this)">カテゴリ順</button>
+                <button class="sort-btn" onclick="sortFridge('newest', this)">登録順（新しい）</button>
+                <button class="sort-btn" onclick="sortFridge('oldest', this)">登録順（古い）</button>
+                <button class="sort-btn" onclick="sortFridge('name_asc', this)">五十音順</button>
             </div>
-            <div class="col-4 col-sm-3">
-                <button type="submit" class="btn btn-success w-100">解析・登録</button>
-            </div>
-        </form>
-    </div>
 
-    <div class="row">
-        <div class="col-md-7">
-            <div class="card p-3">
-                <h5 class="card-title text-primary">✏️ 食材を手動で追加</h5>
-                <form action="{{ url_for('add_item') }}" method="POST" class="row g-2">
-                    <div class="col-12 col-sm-5">
-                        <input type="text" name="name" class="form-control" placeholder="食材名（例：玉ねぎ）" required>
+            <div id="fridge-items-container" style="padding-top: 10px;">
+                {% for item in items %}
+                <div class="food-item" data-category="{{ item.category or 'その他' }}" data-exp="{{ item.exp_date }}" data-order="{{ item.added_order }}" data-name="{{ item.name }}">
+                    <div class="row-top">
+                        <span class="name">{{ item.name }}</span>
+                        <span class="date date-{{ item.exp_status }}">期限: {{ item.exp_date }}</span>
                     </div>
-                    <div class="col-6 col-sm-3">
-                        <input type="number" name="quantity" class="form-control" placeholder="数量" value="1" min="1" required>
+                    <div class="row-bottom">
+                        <div class="controls">
+                            {% if item.unit == 'g' %}
+                                <a href="/update/{{ item.name }}/plus/100" class="btn-qty">+100</a>
+                                <a href="/update/{{ item.name }}/plus/10" class="btn-qty" style="width:28px; font-size:9px;">+10</a>
+                                <span class="val">{{ item.quantity }}g</span>
+                                <a href="/update/{{ item.name }}/minus/10" class="btn-qty minus" style="width:28px; font-size:9px;">-10</a>
+                                <a href="/update/{{ item.name }}/minus/100" class="btn-qty minus">-100</a>
+                            {% else %}
+                                <a href="/update/{{ item.name }}/plus/1" class="btn-qty" style="width:40px;">+</a>
+                                <span class="val">{{ item.quantity }}{{ item.unit }}</span>
+                                <a href="/update/{{ item.name }}/minus/1" class="btn-qty minus" style="width:40px;">-</a>
+                            {% endif %}
+                        </div>
+                        
+                        <a href="/update_status/{{ item.name }}" class="status-badge {{ 'status-open' if item.status == '未開封' else 'status-half' if item.status == '半分' else 'status-frozen' if item.status == '冷凍' else 'status-low' }}">
+                            {{ item.status or '未開封' }}
+                        </a>
+                        <button type="button" class="consume-btn" style="border:none; cursor:pointer;" onclick="openConsumeModal('{{ item.name }}', {{ item.quantity }}, '{{ item.unit }}')">消費</button>
+                        <a href="/delete/{{ item.name }}" class="del-link">削除</a>
                     </div>
-                    <div class="col-6 col-sm-4">
-                        <input type="number" name="price" class="form-control" placeholder="価格（任意）" min="0">
+                    
+                    {% if item.memo %}
+                    <div class="item-memo">{{ item.memo }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="scan-view" class="tab-content">
+            <div class="report-header" style="text-align:center;">
+                <h3 style="color: var(--main-blue); margin-top:0;">レシートで一括登録</h3>
+                <p style="font-size: 12px; color: #666; margin-bottom: 20px;">スマホのカメラでレシートを撮るか、画像を選んでください。</p>
+
+                <input type="file" id="receipt-upload" accept="image/*" capture="environment" style="display:none;" onchange="handleReceiptUpload(event)">
+                
+                <button onclick="document.getElementById('receipt-upload').click()" style="background:var(--main-blue); color:white; border:none; padding:15px 20px; border-radius:30px; font-weight:bold; font-size:16px; cursor:pointer; width:90%; margin-bottom:10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    カメラ / フォルダを開く
+                </button>
+
+                <div id="scan-loading" style="display:none; text-align:center; margin-top: 20px;">
+                    <div class="dot-spinner"></div>
+                    <div style="color: var(--main-blue); font-weight: bold;">AIがレシートを解析中...</div>
+                    <span style="font-size:10px; color:#888;">(3〜5秒ほどかかります)</span>
+                </div>
+            </div>
+
+            <div id="scan-preview-area" style="display:none; padding: 0 10px;">
+                <h4 style="color: #333; font-size: 14px; border-bottom: 2px solid var(--main-blue); padding-bottom: 5px;">読み取り結果（修正できます）</h4>
+                <div id="scan-items-list" style="margin-bottom: 15px;"></div>
+                
+                <button type="button" onclick="addManualScanRow()" style="background:none; border:2px dashed var(--main-blue); color:var(--main-blue); padding:10px; border-radius:12px; font-weight:bold; cursor:pointer; width:100%; margin-bottom:15px; display:flex; align-items:center; justify-content:center; gap:5px;">
+                    ＋ レシートから漏れた食材を追加
+                </button>
+
+                <div style="text-align:center; padding-bottom: 20px;">
+                    <button onclick="submitReceiptItems()" style="background:#4CAF50; color:white; border:none; padding:15px; border-radius:30px; font-weight:bold; font-size:16px; cursor:pointer; width:100%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        この内容で冷蔵庫に入れる
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="report-view" class="tab-content">
+            <div class="report-header" style="text-align:center;">
+                <h3 style="color: var(--main-blue); margin-top:0;">分析レポート</h3>
+                <p style="font-size: 12px; color: #666;">レシート登録額と消費履歴から作成されています</p>
+            </div>
+
+            <div class="summary-wrapper">
+                <div class="summary-card">
+                    <div class="summary-label">今月の食費</div>
+                    <div class="summary-val">¥{{ "{:,}".format(this_month_total) }}</div>
+                </div>
+                <div class="summary-card" style="background: #f8f9fa;">
+                    <div class="summary-label">先月の食費</div>
+                    <div class="summary-val" style="color:#888;">¥{{ "{:,}".format(last_month_total) }}</div>
+                </div>
+            </div>
+
+            <button class="manual-add-btn" onclick="openManualExpenseModal()">＋ 外食・その他の食費を手動で追加</button>
+
+            <div class="chart-container" style="text-align:center;">
+                <select id="expense-period" class="period-select" onchange="updateExpenseChart()">
+                    <option value="comparison" selected>先月と今月の比較</option>
+                    <option value="year">今年の推移</option>
+                </select>
+                <div id="expense-chart-area">
+                    {% if expense_chart %}
+                        <img src="data:image/png;base64,{{ expense_chart }}" style="width: 100%; height: auto; border-radius: 8px;">
+                    {% else %}
+                        <p style="font-size: 12px; color: #666; text-align: center;">レシートの登録データがありません。</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h4 style="margin-top:0; color:var(--main-blue); text-align:center;">よく消費するもの</h4>
+                <div style="text-align:center;">
+                    <select id="ranking-period" class="period-select" onchange="updateRankingChart()" style="margin-top:5px; margin-bottom:15px; width:70%;">
+                        <option value="this_month" selected>今月の消費</option>
+                        <option value="last_month">先月の消費</option>
+                        <option value="year">今年の消費</option>
+                    </select>
+                </div>
+                
+                <div id="ranking-chart-area">
+                    {% if ranking_charts.g %}
+                        <img src="data:image/png;base64,{{ ranking_charts.g }}" style="width: 100%; height: auto; margin-bottom: 15px; border-radius: 8px;">
+                    {% endif %}
+                    
+                    {% if ranking_charts.pack %}
+                        <img src="data:image/png;base64,{{ ranking_charts.pack }}" style="width: 100%; height: auto; margin-bottom: 15px; border-radius: 8px;">
+                    {% endif %}
+                    
+                    {% if ranking_charts.other %}
+                        <img src="data:image/png;base64,{{ ranking_charts.other }}" style="width: 100%; height: auto; border-radius: 8px;">
+                    {% endif %}
+                    
+                    {% if not ranking_charts.g and not ranking_charts.pack and not ranking_charts.other %}
+                        <p style="font-size: 12px; color: #666; text-align: center;">消費データがありません。</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div id="ai-view" class="tab-content">
+            <div class="ai-container">
+                <h3 style="color: var(--main-blue); margin-top:0;">AIシェフ</h3>
+                <div class="config-card">
+                    <b>買い物:</b> <label><input type="radio" name="ai_mode" value="strict" checked> 在庫のみ</label> <label style="margin-left:8px;"><input type="radio" name="ai_mode" value="flexible"> 買い足しOK</label><br><br>
+                    <b>スタイル:</b> <label><input type="radio" name="ai_time" value="quick" checked> 時短</label> <label style="margin-left:8px;"><input type="radio" name="ai_time" value="pro"> 本格</label><br><br>
+                    <label><input type="checkbox" id="ai_prioritize"> 期限優先</label>
+                </div>
+                <div id="ai-response-area" class="ai-box">冷蔵庫の中身を参照し、献立を考案します</div>
+                <button class="ai-btn" onclick="getAiRecommendation()">献立を提案してもらう</button>
+            </div>
+        </div>
+
+        <div id="settings-view" class="tab-content">
+            <div class="settings-card" style="text-align: left;">
+                <h3 style="margin: 0; font-size: 16px; color: var(--main-blue);">アプリの概要</h3>
+                <div style="margin: 5px">
+                    <p style="margin-top: 12px; font-size: 15px; font-weight:700; color: #666; text-align: center;">食をAIでもっと便利に</p>
+                    <h4 style="margin-bottom: 0.2px; font-size: 12px; color: #666;">冷蔵庫の機能</h4>
+                    <p style="margin: 0.5px; font-size: 12px; color: #666;">・冷蔵庫に食材を登録することができます</p>
+                    <p style="margin: 0.5px; font-size: 12px; color: #666;">・登録した中身を消費、削除することができます
+                    <br>（消費を行った場合、グラフの作成に反映されます）</p>
+                    <p style="margin: 0.5px; font-size: 12px; color: #666;">・期限が4日以上ある場合は、緑色で表示され、期限が迫るほど色が変化します
+                    <br>※期限はあくまで目安です。実際の状態を優先してください</p>
+
+                    <h4 style="margin-bottom: 0.2px; font-size: 12px; color: #666;">カメラの機能</h4>
+                    <p style="margin: 0.5px; font-size: 12px; color: #666;">・レシートを撮影することでAIが自動で登録の補助をしてくれます
+                    <br>※AIの食材の判別は、間違える恐れがあります。必ず登録する食材が正しい物かを確認してください。</p>
+
+                    <h4 style="margin-bottom: 0.2px; font-size: 12px; color: #666;">グラフの機能</h4>
+                    <p style="margin: 0.5px; font-size: 12px; color: #666;">・レシート撮影で登録した金額と冷蔵庫の消費からグラフを作成します。</p>
+
+                    <h4 style="margin-bottom: 0.2px; font-size: 12px; color: #666;">AI提案の機能</h4>
+                    <p style="margin: 0.5px; font-size: 12px; color: #666;">・冷蔵庫にある食材をもとにAIがレシピを提案します</p>
+                </div>
+            </div>
+
+            <div class="settings-card" style="text-align: left;">
+                <h4 style="margin-top: 0; color: var(--main-blue);">食材マスターの手動追加</h4>
+                <form action="/add_master?v=1" method="POST">
+                    <input type="text" name="master_name" placeholder="名前 (例: トマト)" style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box;" required>
+                    <input type="text" name="master_yomi" placeholder="ふりがな (例: とまと)" style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box;" required>
+                    <input type="number" name="master_exp_days" placeholder="賞味期限目安 (日数)" style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box;" required>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <select name="master_unit" style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ccc;">
+                            {% for unit in unique_units %}
+                            <option value="{{ unit }}">{{ unit }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="master_category" style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ccc;">
+                            {% for cat in unique_categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="col-12 text-end">
-                        <button type="submit" class="btn btn-primary px-4">追加する</button>
-                    </div>
+                    <button type="submit" style="background: var(--main-blue); color: white; border: none; padding: 10px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer;">マスターに登録</button>
                 </form>
             </div>
 
-            <div class="card p-3">
-                <h5 class="card-title text-secondary">🥬 現在の冷蔵庫の中身</h5>
-                {% if items %}
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>食材名</th>
-                                <th class="text-center">数量</th>
-                                <th class="text-end">アクション</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in items %}
-                            <tr>
-                                <td class="fw-bold">{{ item.name }}</td>
-                                <td class="text-center"><span class="badge bg-secondary fs-6">{{ item.quantity }}</span></td>
-                                <td class="text-end">
-                                    <a href="{{ url_for('consume_item', item_id=item.id) }}" class="btn btn-outline-success btn-custom me-1">🍽️ 消費</a>
-                                    <a href="{{ url_for('delete_item', item_id=item.id) }}" class="btn btn-outline-danger btn-custom" onclick="return confirm('本当に削除しますか？')">❌ 削除</a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <div class="settings-card" style="text-align: left;">
+                <h4 style="margin-top: 0; color: var(--main-blue);">家計簿の設定</h4>
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 12px; color: #666;">今月の目標予算 (円)</label><br>
+                    <input type="number" placeholder="例: 50,000" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; margin-top: 5px;">
                 </div>
-                {% else %}
-                <p class="text-muted text-center my-3">冷蔵庫は空っぽです。食材を登録してください！</p>
-                {% endif %}
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 13px;">週の開始日</span>
+                    <select style="padding: 5px; border-radius: 5px; border: 1px solid #ddd;">
+                        <option>月曜日</option>
+                        <option>日曜日</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-card" style="text-align: left;">
+                <h4 style="margin-top: 0; color: #C62828;">データのリセット</h4>
+                <p style="font-size: 11px; color: #999; margin-bottom: 15px;">アプリのデータを初期化します。この操作は取り消せません。</p>
+                
+                <form action="/reset_inventory?v=1" method="POST" onsubmit="return confirm('本当に冷蔵庫の中身をすべて空にしますか？');">
+                    <button type="submit" class="reset-btn" style="background: #FF9800; padding: 12px; margin-bottom: 10px;">冷蔵庫の中身をリセット</button>
+                </form>
+                <form action="/reset_history?v=1" method="POST" onsubmit="return confirm('本当に金額データをリセットしますか？');">
+                    <button type="submit" class="reset-btn" style="background: #FF4D4D; padding: 12px;">支出・消費履歴をリセット</button>
+                </form>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px; padding-bottom: 40px;">
+                <p style="font-size: 12px; color: #bbb; margin: 0;">AiR - AI Refrigerator</p>
+                <p style="font-size: 11px; color: #ccc; margin: 5px 0;">Version 1.2.0</p>
+                <p style="font-size: 11px; color: #ccc;">© 2026 04/05 Yuri</p>
             </div>
         </div>
 
-        <div class="col-md-5">
-            <div class="card p-3">
-                <h5 class="card-title text-warning">🤖 AIレシピ提案</h5>
-                <div class="d-grid mb-3">
-                    <a href="{{ url_for('suggest_recipe') }}" class="btn btn-warning fw-bold text-dark">冷蔵庫の余り物でレシピを聞く</a>
-                </div>
-                {% if recipe %}
-                <div class="p-3 bg-light rounded border">
-                    <h6 class="fw-bold">💡 提案されたレシピ:</h6>
-                    <div style="white-space: pre-wrap;">{{ recipe }}</div>
-                </div>
-                {% endif %}
+        <div class="footer">
+            <div class="nav-item active" onclick="switchTab('fridge', this)">
+                <img src="/static/images/refrigerator.png" class="nav-icon icon-fridge">冷蔵庫
             </div>
+            <div class="nav-item" onclick="switchTab('scan', this)">
+                <img src="/static/images/camera.png" class="nav-icon icon-camera">カメラ
+            </div>
+            <div class="nav-item" onclick="switchTab('report', this)">
+                <img src="/static/images/graph.png" class="nav-icon icon-report">グラフ
+            </div>
+            <div class="nav-item" onclick="switchTab('ai', this)">
+                <img src="/static/images/cloud.png" class="nav-icon icon-ai">レシピ提案
+            </div>
+             <div class="nav-item" onclick="switchTab('settings', this)">
+                 <img src="/static/images/gear.png" class="nav-icon icon-gear">設定
+            </div>
+    </div>
 
-            <div class="card p-3">
-                <h5 class="card-title text-info">📊 直近の食費・購入傾向</h5>
-                <div class="text-center bg-white p-2 rounded border">
-                    <img src="{{ url_for('generate_graph') }}" alt="食費グラフ" class="img-fluid rounded">
+    <div id="consume-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;">
+        <div style="background:white; padding:20px; border-radius:15px; width:80%; max-width:300px; text-align:center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h3 id="modal-item-name" style="margin-top:0; color:var(--main-blue);"></h3>
+            <p style="font-size:12px; color:#666; margin-bottom:15px;">いくつ消費しますか？<br>(現在庫: <span id="modal-max-qty"></span><span id="modal-unit"></span>)</p>
+            <form action="/consume?v=1" method="POST">
+                <input type="hidden" name="item_name" id="modal-input-name">
+                <input type="number" name="consume_amount" id="modal-input-amount" style="width:90%; padding:12px; border-radius:8px; border:1px solid #ccc; margin-bottom:20px; font-size:16px; text-align:center; box-sizing:border-box;" required>
+                <div style="display:flex; justify-content:space-between; gap:10px;">
+                    <button type="button" onclick="closeConsumeModal()" style="flex:1; padding:12px; border-radius:20px; border:none; background:#eee; color:#333; cursor:pointer; font-weight:bold;">キャンセル</button>
+                    <button type="submit" style="flex:1; padding:12px; border-radius:20px; border:none; background:#4CAF50; color:white; cursor:pointer; font-weight:bold;">消費する</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div id="manual-expense-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color:#FF9800; margin-top:0;">外食費の追加</h3>
+            <form action="/add_manual_expense?v=1" method="POST">
+                <p style="font-size:12px; color:#666; text-align:left; margin-bottom:5px;">日付</p>
+                <input type="date" name="expense_date" id="expense_date_input" style="width:90%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box;" required>
+                <p style="font-size:12px; color:#666; text-align:left; margin-bottom:5px;">内容</p>
+                <input type="text" name="expense_name" value="外食" style="width:90%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box;" required>
+                <p style="font-size:12px; color:#666; text-align:left; margin-bottom:5px;">金額 (円)</p>
+                <input type="number" name="price" placeholder="例: 1500" style="width:90%; padding:10px; margin-bottom:20px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box;" required>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="document.getElementById('manual-expense-modal').style.display='none'" style="flex:1; padding:10px; border-radius:10px; border:none; background:#eee; font-weight:bold; color:#333; cursor:pointer;">キャンセル</button>
+                    <button type="submit" style="flex:1; padding:10px; background:#FF9800; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">追加する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const unitMap = {{ unit_map | safe }};
+    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}?v=6"></script>
 </body>
 </html>

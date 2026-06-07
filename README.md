@@ -40,3 +40,48 @@ project/
 │   └── fonts/          # グラフ描画用の日本語フォント (NotoSansJP-Regular.ttf)
 └── templates/
     └── index.html      # メイン画面のHTMLテンプレート
+
+🚀 環境構築と起動方法
+ローカル環境での実行
+リポジトリをクローンします。
+
+Bash
+git clone [https://github.com/yourusername/AiR.git](https://github.com/yourusername/AiR.git)
+cd AiR
+依存パッケージをインストールします。
+
+Bash
+pip install -r requirements.txt
+プロジェクトルートに .env ファイルを作成し、以下の環境変数を設定します。
+
+Ini, TOML
+GEMINI_API_KEY=your_google_gemini_api_key
+DATABASE_URL=postgresql://your_neon_database_url
+APP_PASSWORD=your_basic_auth_password
+アプリケーションを起動します。
+
+Bash
+python flask_app.py
+ブラウザで http://localhost:5000 にアクセスします。
+
+Render へのデプロイ
+このアプリケーションは Render でのホスティングに最適化されています。
+
+Renderのダッシュボードから Web Service を新規作成し、GitHubリポジトリを連携します。
+
+Environment Variables に以下の3つを設定します。
+
+GEMINI_API_KEY
+
+DATABASE_URL (Neonの接続文字列)
+
+APP_PASSWORD
+
+Start Command を以下のように設定します。
+
+Bash
+gunicorn flask_app:app --bind 0.0.0.0:$PORT
+デプロイを実行します。（※フォントやライブラリを大きく変更した際は、必ず Manual Deploy > Clear Cache and Deploy を実行してください。）
+
+⚠️ 注意事項
+グラフの日本語フォントについて: RenderなどのLinux環境でMatplotlibのグラフを文字化けさせずに描画するため、static/fonts/NotoSansJP-Regular.ttf をプロジェクト内に直接同梱し、コード内で絶対パス指定して読み込んでいます。

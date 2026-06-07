@@ -5,7 +5,6 @@ import json
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
-# ★AIライブラリ（最新版）
 from google import genai
 from PIL import Image
 import io
@@ -40,22 +39,18 @@ app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# ★グラフのデザイン・フォント設定
+# グラフのデザイン設定（フォントの全体設定は削除し、テーマのみ設定）
 sns.set_theme(style="whitegrid", rc={"axes.spines.top": False, "axes.spines.right": False, "axes.spines.left": False})
 
-# 用意したフォントファイルを相対パスで読み込む
-FONT_PATH = os.path.join('static', 'fonts', 'NotoSansJP-Regular.ttf')
-try:
-    if os.path.exists(FONT_PATH):
-        font_manager = matplotlib.font_manager.FontManager()
-        font_manager.addfont(FONT_PATH) # フォントを強制的にリストへ追加
-        prop = matplotlib.font_manager.FontProperties(fname=FONT_PATH)
-        matplotlib.rcParams['font.family'] = prop.get_name()
-        print(f"フォント読み込み成功: {prop.get_name()}")
-    else:
-        print(f"警告: フォントファイルが見つかりません - {FONT_PATH}")
-except Exception as e:
-    print(f"フォント読み込みエラー: {e}")
+# ★ キャッシュを無視してフォントを直接取得する関数
+def get_jp_font(size=10, weight='normal'):
+    import matplotlib.font_manager as fm
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    # 用意していただいた単一の.ttfファイルを指定
+    font_path = os.path.join(base_dir, 'static', 'fonts', 'NotoSansJP-Regular.ttf')
+    if os.path.exists(font_path):
+        return fm.FontProperties(fname=font_path, size=size, weight=weight)
+    return fm.FontProperties(size=size, weight=weight) # 見つからない場合のフォールバック
 
 # Gemini API設定 (最新版)
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
@@ -225,13 +220,18 @@ def create_expense_chart(period='comparison'):
         
         ax.bar(display_labels, receipt_vals, label='自炊 (レシート)', color='#7B8FF7', alpha=0.9)
         ax.bar(display_labels, manual_vals, bottom=receipt_vals, label='外食・その他', color='#FFB74D', alpha=0.9)
-        ax.tick_params(axis='x', rotation=45)
+        
+    # ★ ここで直接フォントを注入
+    ax.set_title(title, fontproperties=get_jp_font(14, 'bold'), pad=25, loc='left')
+    ax.set_ylabel('金額 (円)', fontproperties=get_jp_font(11), color='#555555')
     
-    ax.set_title(title, fontsize=14, fontweight='bold', pad=25, loc='left')
-    ax.set_ylabel('金額 (円)', fontsize=11, color='#555555')
-    ax.set_xlabel('')
-    ax.tick_params(colors='#444444')
-    ax.legend(fontsize=10, loc='lower right', bbox_to_anchor=(1.0, 1.02), ncol=2, frameon=False, borderaxespad=0)
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontproperties(get_jp_font(10))
+        label.set_color('#444444')
+        if period == 'year':
+            label.set_rotation(45)
+
+    ax.legend(prop=get_jp_font(10), loc='lower right', bbox_to_anchor=(1.0, 1.02), ncol=2, frameon=False, borderaxespad=0)
     
     fig.tight_layout()
     buf = io.BytesIO()
@@ -294,12 +294,12 @@ def create_ranking_charts(period='this_month'):
         fig, ax = plt.subplots(figsize=(5, 3))
         sns.barplot(x=qtys, y=names, hue=names, palette=palettes[key], legend=False, ax=ax)
         
-        ax.set_title(f"消費トップ5 ({title_suffix})", fontsize=12, fontweight='bold', pad=10)
-        ax.set_xlabel('累計消費量', fontsize=10, color='#666666')
-        ax.set_ylabel('')
-        ax.tick_params(colors='#555555')
-        for label in ax.get_yticklabels():
-            label.set_fontweight('bold')
+        # ★ ここで直接フォントを注入
+        ax.set_title(f"消費トップ5 ({title_suffix})", fontproperties=get_jp_font(12, 'bold'), pad=10)
+        ax.set_xlabel('累計消費量', fontproperties=get_jp_font(10), color='#666666')
+        
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontproperties(get_jp_font(10, 'bold'))
             label.set_color('#333333')
             
         fig.tight_layout()
@@ -363,7 +363,6 @@ def index():
         
     display_items.sort(key=lambda x: x['exp_date'])
     
-    # 修正: JSが読み取れる形式（JSON文字列）に変換して渡す
     unit_map = {name: info['unit'] for name, info in master_foods.items()}
     unit_map_json = json.dumps(unit_map, ensure_ascii=False)
     

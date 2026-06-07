@@ -3,7 +3,7 @@
 
 AiR（エアー）は、家庭の冷蔵庫の在庫をスマートに管理し、日々の食費や消費傾向を可視化するWebアプリケーションです。最新の生成AIを活用したレシート読み取りやレシピ提案機能も搭載しています。
 
-##主な機能
+## 主な機能
 
 * **在庫管理**
     * 食材ごとの数量、賞味期限、保存状態（未開封・冷凍など）を管理。
@@ -18,7 +18,7 @@ AiR（エアー）は、家庭の冷蔵庫の在庫をスマートに管理し�
 * **食材マスター管理**
     * よく使う食材の名前、ふりがな、デフォルトの賞味期限、単位、カテゴリをマスターとして管理。五十音順やカテゴリ順でのソートが可能です。
 
-##技術スタック
+## 技術スタック
 
 * **Backend:** Python 3, Flask, SQLAlchemy
 * **Database:** Neon (Serverless PostgreSQL)
@@ -27,7 +27,7 @@ AiR（エアー）は、家庭の冷蔵庫の在庫をスマートに管理し�
 * **Frontend:** HTML5, CSS3, Vanilla JavaScript
 * **Hosting:** Render
 
-## 📁 主要なディレクトリ構成
+## 主要なディレクトリ構成
 
 ```text
 project/
@@ -43,11 +43,11 @@ project/
 ```
 
 ## 環境構築と起動方法
-1 リポジトリのクローン
-git clone [https://github.com/yourusername/AiR.git](https://github.com/yourusername/AiR.git)
+* **1 リポジトリのクローン**
+* git clone [https://github.com/yourusername/AiR.git](https://github.com/yourusername/AiR.git)
 cd AiR
-2 依存パッケージをインストールする
-pip install -r requirements.txt
+* **2 依存パッケージをインストールする**
+  * pip install -r requirements.txt
 
 
 

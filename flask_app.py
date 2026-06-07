@@ -44,7 +44,7 @@ db = SQLAlchemy(app)
 sns.set_theme(style="whitegrid", rc={"axes.spines.top": False, "axes.spines.right": False, "axes.spines.left": False})
 
 # 用意したフォントファイルを相対パスで読み込む
-FONT_PATH = os.path.join('static', 'fonts', 'NotoSansJP-VariableFont_wght.ttf')
+FONT_PATH = os.path.join('static', 'fonts', 'meiryo.ttc')
 try:
     if os.path.exists(FONT_PATH):
         font_manager = matplotlib.font_manager.FontManager()

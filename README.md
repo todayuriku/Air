@@ -59,11 +59,11 @@ DATABASE_URL=postgresql://your_neon_database_url
 APP_PASSWORD=your_basic_auth_password
 ```
 * **4 アプリケーションを起動します。**
-```Bash
+```bash
 python flask_app.py
 ```
 * **5 ブラウザで http://localhost:5000 にアクセスします。**
-###Renderへのデプロイ###
+##Renderへのデプロイ##
 *このアプリケーションは Render でのホスティングに最適化されています。
 * **1 Renderのダッシュボードから Web Service を新規作成し、GitHubリポジトリを連携します。**
 
@@ -73,8 +73,8 @@ python flask_app.py
 * APP_PASSWORD
 
 * **3 Start Command を以下のように設定します。**
-  ```bash
+```bash
 gunicorn flask_app:app --bind 0.0.0.0:$PORT
-  ```
+```
 * **4 デプロイを実行します。（※フォントやライブラリを大きく変更した際は、必ず Manual Deploy > Clear Cache and Deploy を実行してください。）**
 

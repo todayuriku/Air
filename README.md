@@ -63,8 +63,9 @@ APP_PASSWORD=your_basic_auth_password
 python flask_app.py
 ```
 * **5 ブラウザで http://localhost:5000 にアクセスします。**
-##Renderへのデプロイ##
-*このアプリケーションは Render でのホスティングに最適化されています。
+
+## Renderへのデプロイ
+* このアプリケーションは Render でのホスティングに最適化されています。
 * **1 Renderのダッシュボードから Web Service を新規作成し、GitHubリポジトリを連携します。**
 
 * **2 2Environment Variables に以下の3つを設定します。**

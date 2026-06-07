@@ -66,6 +66,7 @@ python flask_app.py
 
 ## Renderへのデプロイ
 このアプリケーションは Render でのホスティングに最適化されています。
+
 **1 Renderのダッシュボードから Web Service を新規作成し、GitHubリポジトリを連携します。**
 
 **2 2Environment Variables に以下の3つを設定します。**

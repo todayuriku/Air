@@ -78,5 +78,5 @@ python flask_app.py
 ```bash
 gunicorn flask_app:app --bind 0.0.0.0:$PORT
 ```
-**4 デプロイを実行します。（※フォントやライブラリを大きく変更した際は、必ず Manual Deploy > Clear Cache and Deploy を実行してください。）**
+**4 デプロイを実行します。**
 

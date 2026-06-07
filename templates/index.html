@@ -244,6 +244,32 @@
                 </form>
             </div>
 
+            <div class="master-management" style="background-color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 20px; margin-top: 30px;">
+                <h4 style="margin-top: 0; color: var(--main-blue);">食材マスター管理</h4>
+                <div style="margin-bottom: 15px; display: flex; gap: 8px;">
+                    <button type="button" onclick="sortMasterFoods('yomi')" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #ddd; background: #fff; font-size: 13px; color: #555;">五十音順</button>
+                    <button type="button" onclick="sortMasterFoods('category')" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #ddd; background: #fff; font-size: 13px; color: #555;">カテゴリ順</button>
+                    <button type="button" onclick="loadMasterFoods()" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; background: #f5f5f5; border: 1px solid #ddd; font-size: 13px; color: #555;">更新</button>
+                </div>
+    
+                <div style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #444;">
+                        <thead style="background-color: #fcfcfc; position: sticky; top: 0; z-index: 1;">
+                            <tr>
+                                <th style="padding: 10px; border-bottom: 1px solid #eee; font-weight: normal; color: #777;">名前</th>
+                                <th style="padding: 10px; border-bottom: 1px solid #eee; font-weight: normal; color: #777;">ふりがな</th>
+                                <th style="padding: 10px; border-bottom: 1px solid #eee; font-weight: normal; color: #777;">カテゴリ</th>
+                                <th style="padding: 10px; border-bottom: 1px solid #eee; font-weight: normal; color: #777;">期限</th>
+                                <th style="padding: 10px; border-bottom: 1px solid #eee; font-weight: normal; color: #777;">単位</th>
+                                <th style="padding: 10px; border-bottom: 1px solid #eee; font-weight: normal; color: #777;">操作</th>
+                            </tr>
+                         </thead>
+                        <tbody id="master-foods-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="settings-card" style="text-align: left;">
                 <h4 style="margin-top: 0; color: var(--main-blue);">家計簿の設定</h4>
                 <div style="margin-bottom: 15px;">

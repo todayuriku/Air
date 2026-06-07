@@ -349,3 +349,78 @@ function addManualScanRow() {
 
     listArea.appendChild(row);
 }
+
+// --- 食材マスター管理機能 ---
+let masterFoodsData = [];
+
+// マスターデータを取得して表示
+function loadMasterFoods() {
+    fetch('/api/master_foods')
+        .then(res => res.json())
+        .then(data => {
+            masterFoodsData = data;
+            renderMasterFoodsTable(masterFoodsData);
+        })
+        .catch(err => console.error("マスターデータの読み込みに失敗しました:", err));
+}
+
+// データの並べ替え（ふりがな・カテゴリ）
+function sortMasterFoods(key) {
+    masterFoodsData.sort((a, b) => {
+        let valA = a[key] ? a[key].toString() : '';
+        let valB = b[key] ? b[key].toString() : '';
+        // 日本語対応の並べ替え
+        return valA.localeCompare(valB, 'ja');
+    });
+    renderMasterFoodsTable(masterFoodsData);
+}
+
+// テーブルにデータを描画
+function renderMasterFoodsTable(data) {
+    const tbody = document.getElementById('master-foods-tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    data.forEach(food => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="padding: 8px 10px; border-bottom: 1px solid #f5f5f5; color: #333;">${food.name}</td>
+            <td style="padding: 8px 10px; border-bottom: 1px solid #f5f5f5; color: #666; font-size: 12px;">${food.yomi || ''}</td>
+            <td style="padding: 8px 10px; border-bottom: 1px solid #f5f5f5;"><span style="background: #f0f4f8; color: #555; padding: 3px 6px; border-radius: 4px; font-size: 11px;">${food.category}</span></td>
+            <td style="padding: 8px 10px; border-bottom: 1px solid #f5f5f5; color: #666;">${food.exp_days}日</td>
+            <td style="padding: 8px 10px; border-bottom: 1px solid #f5f5f5; color: #666;">${food.unit}</td>
+            <td style="padding: 8px 10px; border-bottom: 1px solid #f5f5f5;">
+                <button onclick="deleteMasterFood('${food.name}')" style="padding: 3px 8px; background: white; color: #ff4c4c; border: 1px solid #ff4c4c; border-radius: 4px; cursor: pointer; font-size: 11px; transition: 0.2s;">削除</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// マスターから食材を削除
+function deleteMasterFood(name) {
+    if (!confirm(`「${name}」をマスターから完全に削除しますか？`)) return;
+
+    let formData = new FormData();
+    formData.append('name', name);
+
+    fetch('/api/delete_master_food', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(`「${name}」を削除しました。`);
+            loadMasterFoods(); // 表を最新の状態に更新
+        } else {
+            alert('削除に失敗しました。');
+        }
+    });
+}
+
+// ページ読み込み時に一度実行して表を作る
+document.addEventListener('DOMContentLoaded', () => {
+    // 設定画面が開かれたタイミングで実行したい場合は、この関数をモーダルの展開ボタンに紐づけてもOKです
+    loadMasterFoods();
+});

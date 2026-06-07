@@ -369,6 +369,14 @@ def index():
     expense_chart = create_expense_chart('comparison')
     ranking_charts = create_ranking_charts('this_month')
     this_month_total, last_month_total = get_expense_summary()
+    
+    # ★ マスターに登録されている単位とカテゴリの被りなしリストを作成
+    unique_units = list(set([info.get('unit', '個') for info in master_foods.values() if info.get('unit')]))
+    unique_categories = list(set([info.get('category', 'その他') for info in master_foods.values() if info.get('category')]))
+    
+    # データベースが空だった時の初期値
+    if not unique_units: unique_units = ['個', 'g', 'パック', '袋', '本', '枚', 'その他']
+    if not unique_categories: unique_categories = ['野菜', '肉類', '魚介類', '乳製品', '大豆製品', '調味料', 'その他']
             
     return render_template(
         'index.html',
@@ -378,7 +386,9 @@ def index():
         expense_chart=expense_chart,
         ranking_charts=ranking_charts,
         this_month_total=this_month_total,
-        last_month_total=last_month_total
+        last_month_total=last_month_total,
+        unique_units=unique_units,
+        unique_categories=unique_categories
     )
 
 @app.route('/add', methods=['POST'])
@@ -652,6 +662,49 @@ def ask_ai():
     except Exception as e:
         print("AIエラー:", e)
         return jsonify({"answer": "AIエラーが発生しました。"}), 500
+
+# --- ここからマスター管理用の追加API ---
+@app.route('/api/master_foods', methods=['GET'])
+def api_master_foods():
+    records = FoodMaster.query.all()
+    data = [{
+        'name': r.name,
+        'yomi': r.yomi or '',
+        'exp_days': r.exp_days,
+        'unit': r.unit,
+        'category': r.category
+    } for r in records]
+    return jsonify(data)
+
+@app.route('/api/delete_master_food', methods=['POST'])
+def delete_master_food():
+    name = request.form.get('name')
+    if name:
+        target = FoodMaster.query.filter_by(name=name).first()
+        if target:
+            db.session.delete(target)
+            db.session.commit()
+            return jsonify({'success': True})
+    return jsonify({'success': False})
+
+# ★ 追加: HTMLフォームからのマスター追加受け取り口
+@app.route('/add_master', methods=['POST'])
+def add_master():
+    name = request.form.get('master_name')
+    yomi = request.form.get('master_yomi', '')
+    exp_days = request.form.get('master_exp_days', 3)
+    unit = request.form.get('master_unit', '個')
+    category = request.form.get('master_category', 'その他')
+
+    if name:
+        existing = FoodMaster.query.filter_by(name=name).first()
+        if not existing:
+            new_master = FoodMaster(name=name, yomi=yomi, exp_days=int(exp_days), unit=unit, category=category)
+            db.session.add(new_master)
+            db.session.commit()
+            
+    return redirect(url_for('index'))
+# --- ここまで追加 ---
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

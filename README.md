@@ -49,8 +49,8 @@ git clone [https://github.com/yourusername/AiR.git](https://github.com/yourusern
 cd AiR
 ```
 * **2 依存パッケージをインストールする**
-  ```bash
-  pip install -r requirements.txt
+```bash
+pip install -r requirements.txt
   ```
 * **3 プロジェクトルートに .env ファイルを作成し、以下の環境変数を設定します。**
 ```Ini, TOML
@@ -72,9 +72,9 @@ python flask_app.py
 * DATABASE_URL (Neonの接続文字列)
 * APP_PASSWORD
 
-* **3 Start Command を以下のように設定します。
+* **3 Start Command を以下のように設定します。**
   ```bash
-  gunicorn flask_app:app --bind 0.0.0.0:$PORT
+gunicorn flask_app:app --bind 0.0.0.0:$PORT
   ```
-* **デプロイを実行します。（※フォントやライブラリを大きく変更した際は、必ず Manual Deploy > Clear Cache and Deploy を実行してください。）**
+* **4 デプロイを実行します。（※フォントやライブラリを大きく変更した際は、必ず Manual Deploy > Clear Cache and Deploy を実行してください。）**
 

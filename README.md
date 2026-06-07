@@ -43,39 +43,39 @@ project/
 ```
 
 ## 環境構築と起動方法
-* **1 リポジトリのクローン**
+**1 リポジトリのクローン**
 ```bash
 git clone [https://github.com/yourusername/AiR.git](https://github.com/yourusername/AiR.git)
 cd AiR
 ```
-* **2 依存パッケージをインストールする**
+**2 依存パッケージをインストールする**
 ```bash
 pip install -r requirements.txt
   ```
-* **3 プロジェクトルートに .env ファイルを作成し、以下の環境変数を設定します。**
+**3 プロジェクトルートに .env ファイルを作成し、以下の環境変数を設定します。**
 ```Ini, TOML
 GEMINI_API_KEY=your_google_gemini_api_key
 DATABASE_URL=postgresql://your_neon_database_url
 APP_PASSWORD=your_basic_auth_password
 ```
-* **4 アプリケーションを起動します。**
+**4 アプリケーションを起動します。**
 ```bash
 python flask_app.py
 ```
-* **5 ブラウザで http://localhost:5000 にアクセスします。**
+**5 ブラウザで http://localhost:5000 にアクセスします。**
 
 ## Renderへのデプロイ
-* このアプリケーションは Render でのホスティングに最適化されています。
-* **1 Renderのダッシュボードから Web Service を新規作成し、GitHubリポジトリを連携します。**
+このアプリケーションは Render でのホスティングに最適化されています。
+**1 Renderのダッシュボードから Web Service を新規作成し、GitHubリポジトリを連携します。**
 
-* **2 2Environment Variables に以下の3つを設定します。**
+**2 2Environment Variables に以下の3つを設定します。**
 * GEMINI_API_KEY
 * DATABASE_URL (Neonの接続文字列)
 * APP_PASSWORD
 
-* **3 Start Command を以下のように設定します。**
+**3 Start Command を以下のように設定します。**
 ```bash
 gunicorn flask_app:app --bind 0.0.0.0:$PORT
 ```
-* **4 デプロイを実行します。（※フォントやライブラリを大きく変更した際は、必ず Manual Deploy > Clear Cache and Deploy を実行してください。）**
+**4 デプロイを実行します。（※フォントやライブラリを大きく変更した際は、必ず Manual Deploy > Clear Cache and Deploy を実行してください。）**
 

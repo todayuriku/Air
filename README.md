@@ -53,6 +53,7 @@ pip install -r requirements.txt
 **3 プロジェクトルートに .env ファイルを作成し、以下の環境変数を設定します。**
 ```Ini, TOML
 GEMINI_API_KEY=your_google_gemini_api_key
+# Neonのデータベース接続URLを登録
 DATABASE_URL=postgresql://your_neon_database_url
 APP_PASSWORD=your_basic_auth_password
 ```
